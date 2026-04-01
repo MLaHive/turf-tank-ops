@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Turf Tank Ops — OC Parks</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg-primary: #0c0f14;
+  --bg-card: #141820;
+  --bg-card-hover: #1a2030;
+  --bg-input: #0e1118;
+  --border: #1e2636;
+  --border-active: #2a3a5c;
+  --text-primary: #e8ecf4;
+  --text-secondary: #7a8599;
+  --text-muted: #4a5568;
+  --accent-orange: #f97316;
+  --accent-orange-dim: #c2590f;
+  --accent-blue: #3b82f6;
+  --accent-green: #22c55e;
+  --accent-red: #ef4444;
+  --accent-yellow: #eab308;
+  --accent-purple: #a855f7;
+  --truck1: #f97316;
+  --truck2: #3b82f6;
+  --radius: 10px;
+  --radius-sm: 6px;
+  --shadow: 0 2px 12px rgba(0,0,0,0.4);
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-sans: 'DM Sans', -apple-system, sans-serif;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+html { font-size: 15px; }
+body {
+  font-family: var(--font-sans);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+/* ── NAV BAR ── */
+.nav-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: rgba(12,15,20,0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border);
+  display: flex; justify-content: space-around; align-items: center;
+  padding: 6px 4px calc(6px + var(--safe-bottom));
+  z-index: 100;
+}
+.nav-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  background: none; border: none; color: var(--text-muted);
+  font: 500 9px var(--font-sans);
+  padding: 6px 4px; border-radius: 8px;
+  cursor: pointer; transition: all 0.2s;
+  min-width: 48px;
+}
+.nav-btn.active { color: var(--accent-orange); }
+.nav-btn.active .nav-icon { background: rgba(249,115,22,0.12); }
+.nav-icon {
+  width: 32px; height: 32px; display: flex; align-items: center;
+  justify-content: center; border-radius: 8px; transition: all 0.2s;
+  font-size: 16px;
+}
+
+/* ── HEADER ── */
+.app-header {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(12,15,20,0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 16px 12px;
+}
+.header-top { display: flex; align-items: center; gap: 10px; }
+.header-logo {
+  width: 36px; height: 36px; border-radius: 8px;
+  background: linear-gradient(135deg, var(--accent-orange), #ea580c);
+  display: flex; align-items: center; justify-content: center;
+  font: 700 14px var(--font-mono); color: #fff;
+  flex-shrink: 0;
+}
+.header-title {
+  font: 700 17px var(--font-sans); color: var(--text-primary);
+  letter-spacing: -0.3px;
+}
+.header-sub {
+  font: 500 11px var(--font-sans); color: var(--text-secondary);
+  margin-top: -1px;
+}
+
+/* ── SEARCH ── */
+.search-wrap {
+  margin: 10px 16px 0;
+  position: relative;
+}
+.search-input {
+  width: 100%; padding: 10px 12px 10px 36px;
+  background: var(--bg-input); border: 1px solid var(--border);
+  border-radius: var(--radius); color: var(--text-primary);
+  font: 400 14px var(--font-sans); outline: none;
+  transition: border-color 0.2s;
+}
+.search-input:focus { border-color: var(--accent-orange); }
+.search-input::placeholder { color: var(--text-muted); }
+.search-icon {
+  position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+  color: var(--text-muted); font-size: 14px; pointer-events: none;
+}
+
+/* ── CONTENT ── */
+.content {
+  padding: 12px 12px calc(80px + var(--safe-bottom));
+  max-width: 800px; margin: 0 auto;
+}
+
+/* ── CARDS ── */
+.card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); margin-bottom: 8px;
+  overflow: hidden; transition: all 0.15s;
+}
+.card:active { transform: scale(0.99); }
+.card-header {
+  padding: 12px 14px; display: flex; align-items: center;
+  justify-content: space-between; cursor: pointer;
+}
+.card-title {
+  font: 600 14px var(--font-sans); color: var(--text-primary);
+  display: flex; align-items: center; gap: 8px;
+}
+.card-badge {
+  font: 600 10px var(--font-mono); padding: 2px 7px;
+  border-radius: 4px; letter-spacing: 0.5px;
+}
+.badge-t1 { background: rgba(249,115,22,0.15); color: var(--truck1); }
+.badge-t2 { background: rgba(59,130,246,0.15); color: var(--truck2); }
+.badge-count {
+  font: 600 11px var(--font-mono); color: var(--text-muted);
+  background: rgba(255,255,255,0.04); padding: 2px 6px;
+  border-radius: 4px;
+}
+.card-body { padding: 0 14px 14px; }
+.card-chevron { color: var(--text-muted); transition: transform 0.2s; font-size: 12px; }
+.card-chevron.open { transform: rotate(90deg); }
+
+/* ── DATA ROWS ── */
+.data-row {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,0.03);
+  font-size: 13px;
+}
+.data-row:last-child { border-bottom: none; }
+.data-label { color: var(--text-secondary); flex: 1; }
+.data-value { color: var(--text-primary); font-weight: 500; text-align: right; flex: 1; }
+.data-value.mono { font-family: var(--font-mono); font-size: 12px; }
+
+/* ── COLOR DOT ── */
+.color-dot {
+  display: inline-block; width: 10px; height: 10px;
+  border-radius: 50%; margin-right: 6px; vertical-align: middle;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.color-dot.white { background: #f1f5f9; }
+.color-dot.red { background: #ef4444; }
+.color-dot.blue { background: #3b82f6; }
+.color-dot.yellow { background: #eab308; }
+
+/* ── GPS BUTTON ── */
+.gps-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.2);
+  color: var(--accent-green); padding: 6px 12px; border-radius: var(--radius-sm);
+  font: 500 12px var(--font-sans); cursor: pointer;
+  text-decoration: none; transition: all 0.15s;
+}
+.gps-btn:hover { background: rgba(34,197,94,0.18); }
+.gps-btn:active { transform: scale(0.97); }
+
+/* ── SECTION TITLE ── */
+.section-title {
+  font: 700 13px var(--font-mono); color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 1.2px;
+  padding: 16px 4px 8px; display: flex; align-items: center; gap: 8px;
+}
+.section-title::after {
+  content: ''; flex: 1; height: 1px;
+  background: linear-gradient(to right, var(--border), transparent);
+}
+
+/* ── ROUTE TIMELINE ── */
+.route-day {
+  display: flex; gap: 12px; padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+.route-day:last-child { border-bottom: none; }
+.route-day-name {
+  font: 700 12px var(--font-mono); color: var(--accent-orange);
+  min-width: 36px; padding-top: 1px;
+}
+.route-day-name.t2 { color: var(--accent-blue); }
+.route-detail { flex: 1; }
+.route-sites { font: 600 13px var(--font-sans); color: var(--text-primary); }
+.route-region { font: 400 11px var(--font-sans); color: var(--text-secondary); margin-top: 2px; }
+.route-fields { font: 400 12px var(--font-sans); color: var(--text-muted); margin-top: 3px; }
+
+/* ── TRUCK TOGGLE ── */
+.truck-toggle {
+  display: flex; background: var(--bg-input); border-radius: var(--radius);
+  padding: 3px; gap: 3px; margin-bottom: 12px;
+  border: 1px solid var(--border);
+}
+.truck-toggle-btn {
+  flex: 1; padding: 8px; border: none; border-radius: 7px;
+  font: 600 12px var(--font-sans); cursor: pointer;
+  background: transparent; color: var(--text-muted); transition: all 0.2s;
+}
+.truck-toggle-btn.active-t1 { background: rgba(249,115,22,0.15); color: var(--truck1); }
+.truck-toggle-btn.active-t2 { background: rgba(59,130,246,0.15); color: var(--truck2); }
+
+/* ── INVENTORY TABLE ── */
+.inv-table { width: 100%; }
+.inv-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.03);
+  font-size: 13px;
+}
+.inv-row:last-child { border-bottom: none; }
+.inv-item { color: var(--text-primary); flex: 1; }
+.inv-qty {
+  font: 600 13px var(--font-mono); color: var(--accent-green);
+  min-width: 40px; text-align: right;
+}
+.inv-qty.none { color: var(--text-muted); }
+
+/* ── SUPPLY STATUS ── */
+.supply-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 12px 14px;
+  margin-bottom: 6px;
+}
+.supply-name { font: 600 14px var(--font-sans); color: var(--text-primary); }
+.supply-meta {
+  display: flex; gap: 16px; margin-top: 6px;
+  font: 400 12px var(--font-sans); color: var(--text-secondary);
+}
+
+/* ── STATION CARD ── */
+.station-group {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); margin-bottom: 8px; overflow: hidden;
+}
+.station-group-header {
+  padding: 12px 14px; display: flex; align-items: center;
+  justify-content: space-between;
+}
+.station-group-name { font: 600 14px var(--font-sans); color: var(--text-primary); }
+.station-point {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 14px; border-top: 1px solid rgba(255,255,255,0.03);
+}
+.station-coords {
+  font: 400 12px var(--font-mono); color: var(--text-secondary);
+}
+.station-note {
+  font: 400 11px var(--font-sans); color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* ── CONTACT CARD ── */
+.contact-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 12px 14px; margin-bottom: 8px;
+}
+.contact-site { font: 600 14px var(--font-sans); color: var(--text-primary); }
+.contact-info { margin-top: 8px; font-size: 13px; }
+.contact-info a { color: var(--accent-blue); text-decoration: none; }
+
+/* ── EMPTY STATE ── */
+.empty-state {
+  text-align: center; padding: 40px 20px;
+  color: var(--text-muted); font-size: 14px;
+}
+.empty-state .icon { font-size: 32px; margin-bottom: 8px; display: block; }
+
+/* ── TAB PILLS ── */
+.tab-pills {
+  display: flex; gap: 6px; overflow-x: auto; padding: 0 4px 8px;
+  -webkit-overflow-scrolling: touch; scrollbar-width: none;
+}
+.tab-pills::-webkit-scrollbar { display: none; }
+.tab-pill {
+  flex-shrink: 0; padding: 6px 14px; border-radius: 20px;
+  border: 1px solid var(--border); background: transparent;
+  color: var(--text-secondary); font: 500 12px var(--font-sans);
+  cursor: pointer; transition: all 0.2s; white-space: nowrap;
+}
+.tab-pill.active {
+  background: rgba(249,115,22,0.12); border-color: rgba(249,115,22,0.3);
+  color: var(--accent-orange);
+}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+.fade-in { animation: fadeIn 0.25s ease-out; }
+
+/* ── DESKTOP ── */
+@media (min-width: 640px) {
+  .content { padding: 16px 24px calc(80px + var(--safe-bottom)); }
+  .nav-bar { max-width: 480px; left: 50%; transform: translateX(-50%); bottom: 12px; border-radius: 16px; border: 1px solid var(--border); }
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<script type="text/babel">
+
+const { useState, useMemo, useCallback } = React;
+
+// ════════════════════════════════════════════════════
+// DATA
+// ════════════════════════════════════════════════════
+const FIELDS = [
+  // East Orange District — 4 fields
+  {site:"East Orange District",field:"Field 1 (11v11)",dimensions:"300ft x 195ft",color:"White",frequency:"Weekly"},
+  {site:"East Orange District",field:"Field 1 (9v9)",dimensions:"240ft x 165ft",color:"Red",notes:"Overlay on Field 1"},
+  {site:"East Orange District",field:"Field 2 (11v11)",dimensions:"300ft x 195ft",color:"White"},
+  {site:"East Orange District",field:"Field 2 (7v7)",dimensions:"180ft x 111ft",color:"Red",notes:"Overlay on Field 2"},
+  // Blanchard Park — 3 fields
+  {site:"Blanchard Park",field:"Big Field (11v11)",dimensions:"300ft x 180ft",color:"White",frequency:"Weekly"},
+  {site:"Blanchard Park",field:"Small Field (7v7)",dimensions:"195ft x 135ft",color:"White",notes:"Overlay on Small Field"},
+  {site:"Blanchard Park",field:"Small Field (9v9)",dimensions:"195ft x 195ft",color:"Red (Boxes Only)",notes:"Overlay on Small Field"},
+  // South Econ Soccer — 6 fields
+  {site:"South Econ Soccer",field:"Field 1 11v11",dimensions:"330ft x 210ft",color:"White",frequency:"Weekly"},
+  {site:"South Econ Soccer",field:"Field 1 (9v9)",dimensions:"210ft x 140ft",color:"Red",notes:"Overlay on Field 1"},
+  {site:"South Econ Soccer",field:"Field 1 (7v7)",dimensions:"180ft x 120ft",color:"Red",notes:"Overlay on Field 1"},
+  {site:"South Econ Soccer",field:"Field 2 11v11",dimensions:"330ft x 210ft",color:"White"},
+  {site:"South Econ Soccer",field:"Field 2 (9v9)",dimensions:"210ft x 140ft",color:"Red",notes:"Overlay on Field 2"},
+  {site:"South Econ Soccer",field:"Field 2 (7v7)",dimensions:"180ft x 120ft",color:"Red",notes:"Overlay on Field 2"},
+  // Arcadia Acres — 1 field
+  {site:"Arcadia Acres",field:"Field 1 11v11",dimensions:"319ft x 211ft",color:"White",frequency:"Weekly"},
+  // Bomberos Park — 5 fields
+  {site:"Bomberos Park",field:"Field 1 11v11",dimensions:"330ft x 220ft",color:"White",frequency:"Weekly"},
+  {site:"Bomberos Park",field:"Field 2 11v11",dimensions:"330ft x 220ft",color:"White"},
+  {site:"Bomberos Park",field:"Field 3 11v11",dimensions:"330ft x 220ft",color:"White"},
+  {site:"Bomberos Park",field:"Field 3 (9v9)",dimensions:"210ft x 140ft",color:"Blue",notes:"Overlay on Field 3"},
+  {site:"Bomberos Park",field:"Field 3 (7v7)",dimensions:"180ft x 120ft",color:"Red",notes:"Overlay on Field 3"},
+  // Young Pine Park — 5 fields
+  {site:"Young Pine Park",field:"Field 1 (11v11)",dimensions:"300ft x 200ft",color:"White",frequency:"Weekly"},
+  {site:"Young Pine Park",field:"Field 1 (9v9)",dimensions:"210ft x 140ft",color:"Blue",notes:"Overlay on Field 1"},
+  {site:"Young Pine Park",field:"Field 1 (7v7)",dimensions:"180ft x 120ft",color:"Red",notes:"Overlay on Field 1"},
+  {site:"Young Pine Park",field:"Field 2 (11v11)",dimensions:"300ft x 200ft",color:"White"},
+  {site:"Young Pine Park",field:"Field 3 (11v11)",dimensions:"300ft x 200ft",color:"White"},
+  // Barber Park — 7 fields
+  {site:"Barber Park",field:"Field 1 9v9",dimensions:"204ft x 154ft",color:"White",frequency:"Weekly"},
+  {site:"Barber Park",field:"Field 2 11v11",dimensions:"330ft x 210ft",color:"White"},
+  {site:"Barber Park",field:"7v7 Horizontal (1)",dimensions:null,color:"Red",notes:"Overlay on Field 2"},
+  {site:"Barber Park",field:"7v7 Horizontal (2)",dimensions:null,color:"Red",notes:"Overlay on Field 2"},
+  {site:"Barber Park",field:"Field 3 11v11",dimensions:"330ft x 210ft",color:"White"},
+  {site:"Barber Park",field:"Field 4 11v11",dimensions:"330ft x 210ft",color:"White"},
+  {site:"Barber Park",field:"Field 5 11v11",dimensions:"330ft x 210ft",color:"White"},
+  // Bear Creek — 1 field
+  {site:"Bear Creek",field:"Multi Purpose Field",dimensions:"210ft x 135ft",frequency:"Weekly"},
+  // Deputy Brandon Coates — 5 fields
+  {site:"Deputy Brandon Coates",field:"Field 1 (West) - 11v11",dimensions:"360ft x 225ft",frequency:"Weekly",whoPaints:"Parks with Hunters Creek's Robot"},
+  {site:"Deputy Brandon Coates",field:"Field 1 (West) - 3v3 @4",dimensions:"108ft x 78ft",whoPaints:"Parks with Hunters Creek's Robot",notes:"Overlay on Field 1 West"},
+  {site:"Deputy Brandon Coates",field:"Field 2 (East) - 11v11",dimensions:"360ft x 225ft",whoPaints:"Parks with Hunters Creek's Robot"},
+  {site:"Deputy Brandon Coates",field:"Field 2 (East) - 9v9",dimensions:"225ft x 150ft",whoPaints:"Parks with Hunters Creek's Robot",notes:"Overlay on Field 2 East"},
+  {site:"Deputy Brandon Coates",field:"Field 2 (East) - 7v7",dimensions:"180ft x 120ft",whoPaints:"Parks with Hunters Creek's Robot",notes:"Overlay on Field 2 East"},
+  // Dr Phillips Park — 2 fields
+  {site:"Dr Phillips Park",field:"Multi Purpose Field 1",dimensions:"255ft x 135ft",color:"White",frequency:"Weekly"},
+  {site:"Dr Phillips Park",field:"Multi-Purpose Field 2",dimensions:"210ft x 150ft",color:"White"},
+  // West Orange Soccer — 4 fields
+  {site:"West Orange Soccer",field:"Field 1 11v11",dimensions:"315ft x 210ft",color:"White",frequency:"Weekly"},
+  {site:"West Orange Soccer",field:"Field 2 11v11",dimensions:"315ft x 210ft",color:"White"},
+  {site:"West Orange Soccer",field:"Field 3 11v11",dimensions:"315ft x 210ft",color:"White"},
+  {site:"West Orange Soccer",field:"Field 4 11v11",dimensions:"315ft x 210ft",color:"White"},
+  // Deputy Scott Pine — 1 field
+  {site:"Deputy Scott Pine",field:"Field 1",dimensions:"300ft x 200ft",color:"White",frequency:"Weekly"},
+  // RD Keene — 4 fields
+  {site:"RD Keene",field:"Field 1 (Youth) 9v9",dimensions:"240ft x 165ft",color:"White",frequency:"Weekly"},
+  {site:"RD Keene",field:"Field 2 11v11",dimensions:"315ft x 210ft",color:"White"},
+  {site:"RD Keene",field:"Field 1 Lacrosse",dimensions:"Men's NCAA",color:"Blue",notes:"Overlay on Field 1"},
+  {site:"RD Keene",field:"Field 2 Lacrosse",dimensions:"Men's NCAA",color:"Blue",notes:"Overlay on Field 2"},
+];
+
+const ROUTES = {
+  truck1: [
+    {day:"Mon",region:"Southwest",sites:"Dr. Phillips, Bear Creek",fields:"3 fields — DP: 2 multi-purpose (White) · BC: 1 multi-purpose"},
+    {day:"Tue",region:"West Central",sites:"RD Keene, Barnett / Lake Ellenor (as needed)",fields:"4 fields — 2 main (Youth 9v9 + 11v11 White) + 2 Lacrosse overlays (Blue)"},
+    {day:"Wed",region:"Far West",sites:"West Orange Soccer, Deputy Scott Pine",fields:"5 fields — WOS: 4 × 11v11 (White) · DSP: 1 field (White)"},
+    {day:"Thu",region:"South Central",sites:"Barber Park",fields:"7 fields — 5 main (1 × 9v9, 4 × 11v11 White) + 2 × 7v7 overlays (Red)"},
+    {day:"Fri",region:"Makeup Day",sites:"Weather reschedules",fields:"Touch-ups, service, cleaning, special requests"},
+  ],
+  truck2: [
+    {day:"Mon",region:"East Central",sites:"Young Pine",fields:"5 fields — 3 × 11v11 (White) + 1 × 9v9 overlay (Blue) + 1 × 7v7 overlay (Red)"},
+    {day:"Tue",region:"Northeast",sites:"Arcadia Acres, South Econ Soccer",fields:"7 fields — Arcadia: 1 × 11v11 · Econ: 2 × 11v11 (White) + 4 overlays (Red)"},
+    {day:"Wed",region:"East / Far East",sites:"East Orange District, Blanchard Park",fields:"7 fields — EOD: 2 × 11v11 + 2 overlays · Blanchard: 1 × 11v11 + 2 overlays"},
+    {day:"Thu",region:"Southeast",sites:"Bomberos",fields:"5 fields — 3 × 11v11 (White) + 1 × 9v9 overlay (Blue) + 1 × 7v7 overlay (Red)"},
+    {day:"Fri",region:"Makeup Day",sites:"Weather reschedules",fields:"Touch-ups, service, cleaning, special requests"},
+  ]
+};
+
+const STATIONS = [
+  {site:"Arcadia Acres",lat:28.574419,lng:-81.279633},
+  {site:"Barber Park",lat:28.496509,lng:-81.321483},
+  {site:"Barber Park",lat:28.498019,lng:-81.316162},
+  {site:"Barnett Ballfield",lat:28.561599,lng:-81.440390},
+  {site:"Barnett Ballfield",lat:28.562235,lng:-81.440068},
+  {site:"Barnett Field",lat:28.563603,lng:-81.442856},
+  {site:"Bear Creek",lat:28.381973,lng:-81.385375},
+  {site:"Blanchard Park",lat:28.579776,lng:-81.234258},
+  {site:"Bomberos",lat:28.400206,lng:-81.204413},
+  {site:"Cypress Grove",lat:28.493058,lng:-81.378409},
+  {site:"Cypress Grove",lat:28.493193,lng:-81.378186},
+  {site:"Deputy SC",lat:28.464216,lng:-81.589998},
+  {site:"Dr. Phillips",lat:28.406615,lng:-81.490235},
+  {site:"EOD",lat:28.537249,lng:-81.042759},
+  {site:"Econ Soccer",lat:28.572572,lng:-81.274618},
+  {site:"Ft. Christmas",lat:28.564619,lng:-81.021005},
+  {site:"Ft. Christmas",lat:28.562977,lng:-81.019953},
+  {site:"Ft. Christmas",lat:28.564250,lng:-81.020365},
+  {site:"Ft. Christmas",lat:28.562290,lng:-81.020324},
+  {site:"Lake Ellenor",lat:28.462524,lng:-81.406609},
+  {site:"Pine Hills",lat:28.565694,lng:-81.469331},
+  {site:"RD Keene",lat:28.470644,lng:-81.539393},
+  {site:"RD Keene",lat:28.470772,lng:-81.539774},
+  {site:"Rolling Hills",lat:28.604191,lng:-81.452410},
+  {site:"WOP",lat:28.541378,lng:-81.560832},
+  {site:"Young Pine",lat:28.492934,lng:-81.231006},
+];
+
+const INVENTORY = {
+  truck1: {
+    vehicle: {operator:"Mark LaHive",truck:"16411",trailer:"90386",route:"West / South Area"},
+    robot: {asset:"791729",model:"Turf Tank 2",serial:null,tablet:null,batteries:2,chargers:"1"},
+    gpsStation: {asset:null,batteryType:null,antenna:null},
+    accessories: [
+      {item:"Tripod / Prism Pole",qty:1},{item:"Base Station Batteries",qty:4},
+      {item:"Nozzles ☐ Blue ☐ Green ☐ Yellow ☐ Orange",qty:null},
+      {item:"Funnels w/ Screens",qty:1},{item:"Chamber Reducers (Silver Bullet)",qty:null},
+      {item:"Bayonets",qty:null},{item:"Suction Rod Screens",qty:null},
+      {item:"Empty Water Jugs",qty:1},{item:"5.5 Gallon Jugs",qty:null},
+    ],
+    spares: [
+      {item:"Nozzles ☐ Blue ☐ Green ☐ Yellow ☐ Orange",qty:null},
+      {item:"Reducers",qty:null},{item:"Washers",qty:null},
+      {item:"Bayonets",qty:null},{item:"Screens",qty:null},
+    ]
+  },
+  truck2: {
+    vehicle: {operator:"Kevin Grogan",truck:"13924",trailer:"90350",route:"East / Southeast Area"},
+    robot: {asset:"786455",model:"ONE+",serial:"5010013D8",tablet:"SM-T575NZKAEED-TURF",batteries:6,chargers:"2 Office / 1 Truck"},
+    gpsStation: {asset:"S/N T31U04869",batteryType:"LP-E6 x 10",antenna:"1 x QT 450A"},
+    accessories: [
+      {item:"Tripod / Prism Pole",qty:1},{item:"Base Station Batteries",qty:10},
+      {item:"Nozzles ☐ Blue ☐ Green ☐ Yellow ☐ Orange",qty:22},
+      {item:"Funnels w/ Screens",qty:2},{item:"Chamber Reducers (Silver Bullet)",qty:2},
+      {item:"Bayonets",qty:2},{item:"Suction Rod Screens",qty:1},
+      {item:"Empty Water Jugs",qty:1},{item:"5.5 Gallon Jugs",qty:3},
+    ],
+    spares: [
+      {item:"Nozzles ☐ Blue ☐ Green ☐ Yellow ☐ Orange",qty:null},
+      {item:"Reducers",qty:null},{item:"Washers",qty:12},
+      {item:"Bayonets",qty:null},{item:"Screens",qty:2},
+    ]
+  }
+};
+
+const SUPPLIES = [
+  {item:"Field Paint (White)",unit:"Robot"},
+  {item:"Field Paint (Blue)",unit:"Robot"},
+  {item:"Field Paint (Red)",unit:"Robot"},
+  {item:"Aerosol Paint (White)",unit:"Can"},
+  {item:"Aerosol Paint (Blue)",unit:"Can"},
+  {item:"Aerosol Paint (Red)",unit:"Can"},
+];
+
+const CONTACTS = [
+  {site:"East Orange District"},{site:"Blanchard Park"},{site:"South Econ Soccer"},
+  {site:"Arcadia Acres"},{site:"Bomberos Park"},{site:"Young Pine Park"},
+  {site:"Barber Park"},{site:"Bear Creek"},{site:"Deputy Brandon Coates"},
+  {site:"Dr Phillips Park"},{site:"West Orange Soccer"},{site:"Deputy Scott Pine"},
+  {site:"RD Keene"},
+];
+
+// ════════════════════════════════════════════════════
+// ICONS (inline SVG)
+// ════════════════════════════════════════════════════
+const Icon = ({name, size=18}) => {
+  const icons = {
+    fields: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>,
+    routes: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></svg>,
+    gps: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>,
+    inventory: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>,
+    supplies: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>,
+    contacts: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+    search: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
+    chevron: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>,
+    navigate: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>,
+    truck: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>,
+  };
+  return icons[name] || null;
+};
+
+// ════════════════════════════════════════════════════
+// COMPONENTS
+// ════════════════════════════════════════════════════
+
+function ColorDot({color}) {
+  const c = (color||'').toLowerCase();
+  return <span className={`color-dot ${c}`}/>;
+}
+
+// ── Fields View ──
+function FieldsView({search}) {
+  const [selectedSite, setSelectedSite] = useState(null);
+  const sites = useMemo(() => {
+    const map = {};
+    FIELDS.forEach(f => {
+      if (!map[f.site]) map[f.site] = [];
+      map[f.site].push(f);
+    });
+    return Object.entries(map);
+  }, []);
+
+  const filtered = useMemo(() => {
+    if (!search) return sites;
+    const q = search.toLowerCase();
+    return sites.filter(([name, fields]) =>
+      name.toLowerCase().includes(q) ||
+      fields.some(f => f.field.toLowerCase().includes(q) || (f.color||'').toLowerCase().includes(q))
+    );
+  }, [sites, search]);
+
+  return (
+    <div className="fade-in">
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'16px 4px 4px'}}>
+        <div className="section-title" style={{padding:0}}>
+          {filtered.length} Sites — {filtered.reduce((n,[,f])=>n+f.length,0)} Fields
+        </div>
+        <span style={{background:'rgba(34,197,94,0.12)',border:'1px solid rgba(34,197,94,0.25)',color:'var(--accent-green)',padding:'4px 12px',borderRadius:'20px',font:'600 11px var(--font-mono)',letterSpacing:'0.5px'}}>WEEKLY</span>
+      </div>
+      {filtered.map(([site, fields]) => (
+        <div className="card" key={site}>
+          <div className="card-header" onClick={()=>setSelectedSite(selectedSite===site?null:site)}>
+            <div className="card-title">
+              {site}
+              <span className="badge-count">{fields.length}</span>
+            </div>
+            <span className={`card-chevron ${selectedSite===site?'open':''}`}><Icon name="chevron" size={14}/></span>
+          </div>
+          {selectedSite===site && (
+            <div className="card-body fade-in">
+              {fields.map((f,i) => (
+                <div key={i} style={{padding:'7px 0',borderBottom:'1px solid rgba(255,255,255,0.03)'}}>
+                  <div className="data-row" style={{borderBottom:'none',padding:0}}>
+                    <span className="data-label">
+                      <ColorDot color={f.color}/>{f.field}
+                    </span>
+                    <span className="data-value" style={{fontSize:'12px',color:'var(--text-secondary)'}}>
+                      {f.dimensions || '—'}
+                    </span>
+                  </div>
+                  {(f.whoPaints || f.notes) && (
+                    <div style={{marginTop:'3px',marginLeft:'16px',fontSize:'11px',display:'flex',gap:'10px'}}>
+                      {f.notes && <span style={{color:'var(--accent-yellow)'}}>{f.notes}</span>}
+                      {f.whoPaints && <span style={{color:'var(--accent-purple)',fontStyle:'italic'}}>{f.whoPaints}</span>}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Routes View ──
+function RoutesView() {
+  const [truck, setTruck] = useState('truck1');
+  const routes = ROUTES[truck];
+  const fridayPriorities = ["Weather-related reschedules","Field touch-ups","Special requests","Deep robot cleaning"];
+  return (
+    <div className="fade-in">
+      <div className="section-title">Weekly Route Plan</div>
+      <div className="truck-toggle">
+        <button className={`truck-toggle-btn ${truck==='truck1'?'active-t1':''}`} onClick={()=>setTruck('truck1')}>
+          Truck 1 — West/South
+        </button>
+        <button className={`truck-toggle-btn ${truck==='truck2'?'active-t2':''}`} onClick={()=>setTruck('truck2')}>
+          Truck 2 — East/SE
+        </button>
+      </div>
+      <div className="card">
+        <div className="card-body" style={{paddingTop:14}}>
+          {routes.map((r,i) => (
+            <div className="route-day" key={i}>
+              <div className={`route-day-name ${truck==='truck2'?'t2':''}`}>{r.day}</div>
+              <div className="route-detail">
+                <div className="route-sites">{r.sites}</div>
+                <div className="route-region">{r.region}</div>
+                <div className="route-fields">{r.fields}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="card" style={{marginTop:8}}>
+        <div className="card-header">
+          <div className="card-title">Friday Makeup Priorities</div>
+        </div>
+        <div className="card-body">
+          {fridayPriorities.map((p,i) => (
+            <div className="data-row" key={i}>
+              <span className="data-label" style={{color:'var(--accent-orange)',fontFamily:'var(--font-mono)',fontSize:'12px',minWidth:'24px',flex:'none'}}>{i+1}.</span>
+              <span className="data-value" style={{textAlign:'left',flex:1}}>{p}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Base Stations View ──
+function StationsView({search}) {
+  const grouped = useMemo(() => {
+    const map = {};
+    STATIONS.forEach(s => {
+      if (!map[s.site]) map[s.site] = [];
+      map[s.site].push(s);
+    });
+    return Object.entries(map);
+  }, []);
+
+  const filtered = useMemo(() => {
+    if (!search) return grouped;
+    const q = search.toLowerCase();
+    return grouped.filter(([name]) => name.toLowerCase().includes(q));
+  }, [grouped, search]);
+
+  const openMaps = (lat, lng, name) => {
+    const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+    window.open(url, '_blank');
+  };
+
+  return (
+    <div className="fade-in">
+      <div className="section-title">{STATIONS.length} Base Station Points</div>
+      {filtered.map(([site, points]) => (
+        <div className="station-group" key={site}>
+          <div className="station-group-header">
+            <span className="station-group-name">{site}</span>
+            <span className="badge-count">{points.length} pt{points.length>1?'s':''}</span>
+          </div>
+          {points.map((pt, i) => (
+            <div className="station-point" key={i}>
+              <div>
+                <div className="station-coords">{pt.lat.toFixed(6)}, {pt.lng.toFixed(6)}</div>
+                {pt.notes && <div className="station-note">{pt.notes}</div>}
+              </div>
+              <a className="gps-btn" onClick={()=>openMaps(pt.lat,pt.lng,site)} href="#">
+                <Icon name="navigate" size={14}/> Navigate
+              </a>
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Inventory View ──
+function InventoryView() {
+  const [truck, setTruck] = useState('truck1');
+  const data = INVENTORY[truck];
+  const v = data.vehicle;
+  const r = data.robot;
+  const g = data.gpsStation;
+
+  const InfoRow = ({label, value}) => (
+    <div className="data-row">
+      <span className="data-label">{label}</span>
+      <span className="data-value mono">{value || '—'}</span>
+    </div>
+  );
+
+  return (
+    <div className="fade-in">
+      <div className="section-title">Truck & Equipment Inventory</div>
+      <div className="truck-toggle">
+        <button className={`truck-toggle-btn ${truck==='truck1'?'active-t1':''}`} onClick={()=>setTruck('truck1')}>
+          Truck 1 — Mark
+        </button>
+        <button className={`truck-toggle-btn ${truck==='truck2'?'active-t2':''}`} onClick={()=>setTruck('truck2')}>
+          Truck 2 — Kevin
+        </button>
+      </div>
+
+      {/* Vehicle Info */}
+      <div className="card">
+        <div className="card-header"><div className="card-title">Vehicle Information</div></div>
+        <div className="card-body">
+          <InfoRow label="Operator" value={v.operator}/>
+          <InfoRow label="Truck #" value={v.truck}/>
+          <InfoRow label="Trailer #" value={v.trailer}/>
+          <InfoRow label="Route / Area" value={v.route}/>
+        </div>
+      </div>
+
+      {/* Robot Asset */}
+      <div className="card">
+        <div className="card-header"><div className="card-title">Robot Asset</div></div>
+        <div className="card-body">
+          <InfoRow label="Asset #" value={r.asset}/>
+          <InfoRow label="Model" value={r.model}/>
+          <InfoRow label="Serial Number" value={r.serial}/>
+          <InfoRow label="Assigned Tablet" value={r.tablet}/>
+          <InfoRow label="Robot Batteries" value={r.batteries}/>
+          <InfoRow label="Battery Chargers" value={r.chargers}/>
+        </div>
+      </div>
+
+      {/* GPS Base Station */}
+      <div className="card">
+        <div className="card-header"><div className="card-title">GPS Base Station</div></div>
+        <div className="card-body">
+          <InfoRow label="Asset #" value={g.asset}/>
+          <InfoRow label="Battery Type / Qty" value={g.batteryType}/>
+          <InfoRow label="Antenna / Qty" value={g.antenna}/>
+        </div>
+      </div>
+
+      {/* Accessories On Hand */}
+      <div className="card">
+        <div className="card-header"><div className="card-title">Accessories — On Hand</div></div>
+        <div className="card-body">
+          <div className="inv-table">
+            {data.accessories.map((item,i) => (
+              <div className="inv-row" key={i}>
+                <span className="inv-item">{item.item}</span>
+                <span className={`inv-qty ${item.qty==null?'none':''}`}>
+                  {item.qty != null ? item.qty : '—'}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Spare Parts */}
+      <div className="card">
+        <div className="card-header"><div className="card-title">Spare Parts — In Reserve</div></div>
+        <div className="card-body">
+          <div className="inv-table">
+            {data.spares.map((item,i) => (
+              <div className="inv-row" key={i}>
+                <span className="inv-item">{item.item}</span>
+                <span className={`inv-qty ${item.qty==null?'none':''}`}>
+                  {item.qty != null ? item.qty : '—'}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Supplies View ──
+function SuppliesView() {
+  return (
+    <div className="fade-in">
+      <div className="section-title">Paint & Supplies Inventory (Warehouse)</div>
+      {SUPPLIES.map((s,i) => (
+        <div className="supply-card" key={i}>
+          <div className="supply-name">{s.item}</div>
+          <div className="supply-meta">
+            <span style={{color: s.unit==='Robot' ? 'var(--accent-green)' : 'var(--accent-red)'}}>Unit: {s.unit}</span>
+            <span style={{color:'var(--text-muted)'}}>On hand: —</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Contacts View ──
+function ContactsView({search}) {
+  const filtered = useMemo(() => {
+    if (!search) return CONTACTS;
+    const q = search.toLowerCase();
+    return CONTACTS.filter(c => c.site.toLowerCase().includes(q));
+  }, [search]);
+
+  return (
+    <div className="fade-in">
+      <div className="section-title">{filtered.length} Site Contacts</div>
+      {filtered.map((c,i) => (
+        <div className="contact-card" key={i}>
+          <div className="contact-site">{c.site}</div>
+          <div className="contact-info">
+            <div className="data-row">
+              <span className="data-label">Contact Name</span>
+              <span className="data-value" style={{color:'var(--text-muted)'}}>—</span>
+            </div>
+            <div className="data-row">
+              <span className="data-label">Email</span>
+              <span className="data-value" style={{color:'var(--text-muted)'}}>—</span>
+            </div>
+            <div className="data-row">
+              <span className="data-label">Phone</span>
+              <span className="data-value" style={{color:'var(--text-muted)'}}>—</span>
+            </div>
+            <div className="data-row">
+              <span className="data-label">Gate Code</span>
+              <span className="data-value mono" style={{color:'var(--accent-orange)',letterSpacing:'2px'}}>0911</span>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════
+// APP
+// ════════════════════════════════════════════════════
+function App() {
+  const [tab, setTab] = useState('fields');
+  const [search, setSearch] = useState('');
+
+  const tabs = [
+    {id:'fields', label:'Fields', icon:'fields'},
+    {id:'routes', label:'Routes', icon:'routes'},
+    {id:'gps', label:'GPS', icon:'gps'},
+    {id:'inventory', label:'Trucks', icon:'truck'},
+    {id:'supplies', label:'Supplies', icon:'supplies'},
+    {id:'contacts', label:'Contacts', icon:'contacts'},
+  ];
+
+  return (
+    <>
+      <div className="app-header">
+        <div className="header-top">
+          <div className="header-logo">TT</div>
+          <div>
+            <div className="header-title">Turf Tank Ops</div>
+            <div className="header-sub">Orange County Parks & Recreation</div>
+          </div>
+        </div>
+        {(tab==='fields'||tab==='gps'||tab==='contacts') && (
+          <div className="search-wrap" style={{margin:'10px 0 0'}}>
+            <span className="search-icon"><Icon name="search" size={14}/></span>
+            <input
+              className="search-input"
+              placeholder={`Search ${tab==='fields'?'fields & sites':tab==='gps'?'base stations':'contacts'}...`}
+              value={search} onChange={e=>setSearch(e.target.value)}
+            />
+          </div>
+        )}
+      </div>
+
+      <div className="content">
+        {tab==='fields' && <FieldsView search={search}/>}
+        {tab==='routes' && <RoutesView/>}
+        {tab==='gps' && <StationsView search={search}/>}
+        {tab==='inventory' && <InventoryView/>}
+        {tab==='supplies' && <SuppliesView/>}
+        {tab==='contacts' && <ContactsView search={search}/>}
+      </div>
+
+      <nav className="nav-bar">
+        {tabs.map(t => (
+          <button key={t.id} className={`nav-btn ${tab===t.id?'active':''}`}
+            onClick={()=>{setTab(t.id);setSearch('');}}>
+            <span className="nav-icon"><Icon name={t.icon} size={18}/></span>
+            {t.label}
+          </button>
+        ))}
+      </nav>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
