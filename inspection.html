@@ -462,8 +462,8 @@ function capturePhoto(slotId, input) {
   if (!file) return;
   const reader = new FileReader();
   reader.onload = async (e) => {
-    // Compress to max 600px wide, 0.5 quality — keeps each photo ~15-30KB
-    const compressed = await compressImage(e.target.result, 600, 0.5);
+    // Compress to max 480px wide, 0.4 quality — keeps each photo ~10-20KB
+    const compressed = await compressImage(e.target.result, 480, 0.4);
     state.photos[slotId] = { name: file.name, data: compressed, type: "image/jpeg" };
     render();
   };
@@ -535,11 +535,7 @@ function buildEmailHTML() {
   const photoEntries = PHOTO_SLOTS.filter(s => state.photos[s.id]);
   if (photoEntries.length > 0) {
     h += `<h3 style="margin:18px 0 6px;color:#8b949e;font-size:14px;">📷 Robot Photos (${photoEntries.length}/5)</h3>`;
-    photoEntries.forEach(slot => {
-      const p = state.photos[slot.id];
-      h += `<div style="margin:8px 0;"><div style="font-size:12px;font-weight:bold;color:#333;margin-bottom:4px;">${slot.label}</div>`;
-      h += `<img src="${p.data}" alt="${slot.label}" style="max-width:100%;max-height:400px;border-radius:6px;border:1px solid #ddd;"></div>`;
-    });
+    h += `<p style="font-size:13px;color:#555;">Photos attached: ${photoEntries.map(s => s.label).join(", ")}</p>`;
   }
 
   h += `<hr style="margin:24px 0;border:none;border-top:1px solid #ddd;">`;
@@ -578,11 +574,27 @@ async function handleSubmit() {
     const subject = `${emoji} Robot Inspection: ${rb?.label} — ${dateStr}`;
     const htmlBody = buildEmailHTML();
 
-    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+    // Build attachments from photos
+    const photoSlotNames = { front:"Front", left:"Left_Side", right:"Right_Side", back:"Back", compartments:"Battery_Paint_Jugs" };
+    const templateParams = {
       to_email: RECIPIENT_EMAIL,
       subject: subject,
       html_body: htmlBody,
+    };
+
+    // EmailJS Variable Attachments: send raw base64 without data URI prefix
+    let photoIndex = 1;
+    PHOTO_SLOTS.forEach(slot => {
+      const p = state.photos[slot.id];
+      if (p) {
+        // Strip "data:image/jpeg;base64," prefix — EmailJS needs raw base64
+        const raw = p.data.replace(/^data:image\/\w+;base64,/, "");
+        templateParams[`content_${photoIndex}`] = raw;
+        photoIndex++;
+      }
     });
+
+    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams);
 
     setState({ sent: true, sending: false });
   } catch (err) {
