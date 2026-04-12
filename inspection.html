@@ -309,7 +309,7 @@ function renderForm() {
   html += `<div class="card card-pad">
     <label class="label">📝 General Notes</label>
     <textarea class="note-input" rows="3" placeholder="Any additional observations, upcoming concerns, parts needed..."
-      oninput="setState({generalNotes:this.value})">${esc(state.generalNotes)}</textarea>
+      oninput="state.generalNotes=this.value">${esc(state.generalNotes)}</textarea>
   </div>`;
 
   // Overall status
@@ -439,12 +439,32 @@ function triggerPhoto(slotId) {
   document.getElementById("photo_" + slotId)?.click();
 }
 
+function compressImage(dataUrl, maxWidth, quality) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, maxWidth / img.width);
+      const w = Math.round(img.width * scale);
+      const h = Math.round(img.height * scale);
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL("image/jpeg", quality));
+    };
+    img.src = dataUrl;
+  });
+}
+
 function capturePhoto(slotId, input) {
   const file = input.files?.[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = (e) => {
-    state.photos[slotId] = { name: file.name, data: e.target.result, type: file.type };
+  reader.onload = async (e) => {
+    // Compress to max 600px wide, 0.5 quality — keeps each photo ~15-30KB
+    const compressed = await compressImage(e.target.result, 600, 0.5);
+    state.photos[slotId] = { name: file.name, data: compressed, type: "image/jpeg" };
     render();
   };
   reader.readAsDataURL(file);
