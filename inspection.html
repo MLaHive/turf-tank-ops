@@ -582,14 +582,17 @@ async function handleSubmit() {
       html_body: htmlBody,
     };
 
-    // EmailJS Variable Attachments: send raw base64 without data URI prefix
+    // EmailJS Variable Attachments: send as data URI so content type is recognized
     let photoIndex = 1;
     PHOTO_SLOTS.forEach(slot => {
       const p = state.photos[slot.id];
       if (p) {
-        // Strip "data:image/jpeg;base64," prefix — EmailJS needs raw base64
-        const raw = p.data.replace(/^data:image\/\w+;base64,/, "");
-        templateParams[`content_${photoIndex}`] = raw;
+        // Ensure proper data URI format for EmailJS
+        let dataUri = p.data;
+        if (!dataUri.startsWith("data:")) {
+          dataUri = "data:image/jpeg;base64," + dataUri;
+        }
+        templateParams[`content_${photoIndex}`] = dataUri;
         photoIndex++;
       }
     });
