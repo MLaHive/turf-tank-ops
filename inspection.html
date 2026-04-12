@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0e1117">
+<title>Robot Inspection — OC Parks Turf Tank</title>
+<link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiUm9ib3QgSW5zcGVjdGlvbiIsInNob3J0X25hbWUiOiJJbnNwZWN0aW9uIiwic3RhcnRfdXJsIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMwZTExMTciLCJ0aGVtZV9jb2xvciI6IiMwZTExMTcifQ==">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Semi+Condensed:wght@500;600&display=swap" rel="stylesheet">
+
+<!-- ═══ EmailJS SDK ═══ -->
+<!-- Sign up free at https://www.emailjs.com -->
+<!-- Then replace the 3 placeholder values below -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>
+  // ╔═══════════════════════════════════════════════════════════╗
+  // ║  EMAILJS SETUP — Replace these 3 values after signup     ║
+  // ║  1. Go to emailjs.com → Create free account              ║
+  // ║  2. Add Email Service (Gmail or Outlook)                  ║
+  // ║  3. Create Template with variables:                       ║
+  // ║     {{to_email}}, {{subject}}, {{html_body}}              ║
+  // ║  4. Copy your Public Key, Service ID, Template ID below   ║
+  // ╚═══════════════════════════════════════════════════════════╝
+  const EMAILJS_PUBLIC_KEY  = "Rtu5hltePVDGMlyNs";
+  const EMAILJS_SERVICE_ID  = "service_gqkk43h";
+  const EMAILJS_TEMPLATE_ID = "template_el3jlux";
+  const RECIPIENT_EMAIL     = "mark.lahive@ocfl.net";
+
+  if (EMAILJS_PUBLIC_KEY !== "YOUR_PUBLIC_KEY") {
+    emailjs.init(EMAILJS_PUBLIC_KEY);
+  }
+</script>
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0e1117; --card: #161b22; --border: #2a3140;
+    --accent: #3fb950; --accent-dim: #238636; --accent-glow: rgba(63,185,80,0.15);
+    --text: #e6edf3; --text-mid: #8b949e; --text-dim: #484f58;
+    --good: #3fb950; --fair: #d29922; --repair: #f0883e; --oos: #f85149;
+    --danger-bg: rgba(248,81,73,0.1);
+    --font: 'Barlow', sans-serif; --font-mono: 'Barlow Semi Condensed', sans-serif;
+  }
+  body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+  select, input, textarea, button { font-family: inherit; }
+  select { color-scheme: dark; }
+
+  .header { position: sticky; top: 0; z-index: 100; background: linear-gradient(180deg, #0e1117 0%, #0e1117ee 85%, #0e111700 100%); padding: 16px 16px 24px; }
+  .header-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+  .header h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.01em; }
+  .header-sub { font-size: 12px; color: var(--text-dim); font-family: var(--font-mono); padding-left: 18px; }
+
+  .card { background: var(--card); border-radius: 12px; border: 1px solid var(--border); margin-bottom: 12px; }
+  .card-pad { padding: 16px; }
+  .card-pad-sm { padding: 14px; }
+  .label { display: block; font-size: 11px; font-family: var(--font-mono); font-weight: 600; color: var(--text-mid); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .label-sm { font-size: 10px; }
+
+  .sel, .inp { width: 100%; padding: 10px 12px; font-size: 14px; font-weight: 600; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 8px; appearance: auto; }
+  .info-box { margin-top: 10px; padding: 10px; background: var(--bg); border-radius: 8px; font-size: 12px; color: var(--text-mid); line-height: 1.6; }
+  .info-box strong { color: var(--text); }
+
+  /* Progress */
+  .progress-wrap { margin-bottom: 16px; }
+  .progress-labels { display: flex; justify-content: space-between; font-size: 11px; font-family: var(--font-mono); color: var(--text-mid); margin-bottom: 4px; }
+  .progress-track { height: 6px; border-radius: 3px; background: var(--border); overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--accent-dim), var(--accent)); transition: width 0.3s ease; }
+
+  /* Section accordion */
+  .section-btn { width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; background: none; border: none; cursor: pointer; color: var(--text); }
+  .section-title { font-size: 15px; font-weight: 700; }
+  .section-icon { font-size: 18px; }
+  .issue-badge { font-size: 10px; font-family: var(--font-mono); font-weight: 600; color: var(--oos); background: var(--danger-bg); padding: 2px 7px; border-radius: 10px; }
+  .section-check { color: var(--accent); font-size: 14px; }
+  .section-arrow { font-size: 12px; color: var(--text-dim); transition: transform 0.2s; }
+  .section-body { padding: 0 16px 12px; }
+
+  /* Inspection item */
+  .item { padding: 12px 0; border-bottom: 1px solid rgba(42,49,64,0.13); }
+  .item-label { font-weight: 600; font-size: 14px; }
+  .item-hint { font-size: 11px; color: var(--text-dim); margin-top: 1px; }
+  .ratings { display: flex; gap: 6px; margin-top: 6px; }
+  .pill { flex: 1; padding: 7px 4px; font-size: 11px; font-family: var(--font-mono); font-weight: 600; letter-spacing: 0.02em; border-radius: 8px; cursor: pointer; transition: all 0.15s ease; white-space: nowrap; background: transparent; }
+  .note-input { width: 100%; margin-top: 8px; padding: 10px; font-size: 13px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); resize: vertical; min-height: 50px; }
+
+  /* Photos */
+  .photo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .photo-slot { position: relative; border-radius: 10px; overflow: hidden; cursor: pointer; transition: border-color 0.2s ease; }
+  .photo-slot-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 12px; text-align: center; min-height: 80px; }
+  .photo-slot-icon { font-size: 22px; color: var(--text-dim); margin-bottom: 4px; opacity: 0.5; }
+  .photo-slot-label { font-size: 12px; font-family: var(--font-mono); font-weight: 600; color: var(--text-mid); }
+  .photo-slot-hint { font-size: 10px; color: var(--text-dim); margin-top: 2px; }
+  .photo-slot-cta { font-size: 10px; color: var(--accent); margin-top: 6px; font-family: var(--font-mono); }
+  .photo-overlay { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(0,0,0,0.75)); padding: 16px 8px 6px; display: flex; align-items: center; justify-content: space-between; }
+  .photo-btn { width: 24px; height: 24px; border-radius: 50%; border: none; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+  /* Status buttons */
+  .status-btn { flex: 1; padding: 12px 8px; font-size: 13px; font-family: var(--font-mono); font-weight: 700; border-radius: 10px; cursor: pointer; transition: all 0.15s ease; }
+
+  /* Submit */
+  .submit-btn { width: 100%; padding: 16px; font-size: 16px; font-family: var(--font-mono); font-weight: 700; border: none; border-radius: 12px; cursor: pointer; transition: all 0.2s ease; }
+  .submit-btn.ready { background: linear-gradient(135deg, var(--accent-dim), var(--accent)); color: #fff; box-shadow: 0 4px 20px var(--accent-glow); }
+  .submit-btn.disabled { background: var(--border); color: var(--text-dim); cursor: not-allowed; }
+  .helper-text { text-align: center; font-size: 11px; color: var(--text-dim); margin-top: 8px; font-family: var(--font-mono); }
+
+  .error-box { background: var(--danger-bg); border: 1px solid rgba(248,81,73,0.27); border-radius: 10px; padding: 12px; margin-bottom: 12px; font-size: 13px; color: var(--oos); }
+
+  /* Sent screen */
+  .sent-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+  .sent-inner { text-align: center; max-width: 360px; }
+  .sent-icon { font-size: 56px; margin-bottom: 16px; }
+  .sent-title { color: var(--accent); font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+  .sent-msg { color: var(--text-mid); font-size: 14px; line-height: 1.5; margin-bottom: 24px; }
+  .sent-msg strong { color: var(--text); }
+  .new-btn { padding: 12px 32px; font-size: 14px; font-family: var(--font-mono); font-weight: 600; background: var(--accent-dim); color: #fff; border: none; border-radius: 10px; cursor: pointer; }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div id="app"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════════════════════
+const ROBOTS = [
+  { id:"truck1", label:"TT2 — Asset #791729", operator:"Mark LaHive", truck:"16411", serial:"S01004B9D1" },
+  { id:"truck2", label:"ONE+ — Asset #786455", operator:"Kevin Grogan", truck:"13924", serial:"5010013D8" },
+];
+const BASE_STATIONS = [
+  { id:"bs1", label:"S/N T31L04980 (Truck 1)", truck:"16411" },
+  { id:"bs2", label:"S/N T31U04869 (Truck 2)", truck:"13924" },
+];
+const RATINGS = ["Good","Fair","Needs Repair","Out of Service"];
+const RATING_COLORS = { Good:"var(--good)", Fair:"var(--fair)", "Needs Repair":"var(--repair)", "Out of Service":"var(--oos)" };
+const RATING_SHORT = { "Needs Repair":"Repair", "Out of Service":"OOS" };
+
+const SECTIONS = [
+  { title:"Paint System", icon:"🎨", items:[
+    { id:"inline_filter", label:"Inline Mesh Filter", hint:"Check for clogs, tears, buildup" },
+    { id:"suction_rod", label:"Suction Rod & Screen", hint:"Screen intact, rod seals tight" },
+    { id:"pump", label:"Pump Operation", hint:"Primes consistently, no leaks" },
+    { id:"sprayer_head", label:"Sprayer Head / Nozzle", hint:"Spray pattern even, no drip" },
+    { id:"bayonet", label:"Bayonet Condition", hint:"Threads clean, seats properly" },
+    { id:"chamber_reducer", label:"Chamber Reducer", hint:"No wear or deformation" },
+    { id:"tubing", label:"Tubing & Connections", hint:"No kinks, cracks, or loose fittings" },
+  ]},
+  { title:"Body & Frame", icon:"🛡️", items:[
+    { id:"shields", label:"Shields / Covers", hint:"No cracks, excessive paint buildup" },
+    { id:"chassis", label:"Chassis", hint:"No rust, bends, or structural damage" },
+    { id:"wheels", label:"Wheels & Wheel Scrapers", hint:"Tread depth, free of debris buildup" },
+    { id:"spray_discs", label:"Spray Discs", hint:"Clean, proper spacing, nuts tight" },
+    { id:"body_overall", label:"Overall Cleanliness", hint:"Paint/dirt/turf removed from body" },
+  ]},
+  { title:"Electronics & Software", icon:"⚡", items:[
+    { id:"batteries", label:"Robot Batteries", hint:"Hold charge, connectors undamaged" },
+    { id:"tablet", label:"Tablet Condition", hint:"Screen, charging port, case intact" },
+    { id:"software", label:"Software Version Match", hint:"Robot + App on same version" },
+    { id:"imu", label:"IMU / Calibration", hint:"No drift, calibration current" },
+    { id:"chargers", label:"Battery Chargers", hint:"All chargers functional, cords intact" },
+  ]},
+  { title:"Drive System", icon:"⚙️", items:[
+    { id:"motors", label:"Motor Response", hint:"Smooth acceleration and turning" },
+    { id:"steering", label:"Steering Alignment", hint:"Tracks straight, no pulling" },
+    { id:"braking", label:"Stop / E-Stop", hint:"Stops promptly on command" },
+  ]},
+  { title:"Base Station", icon:"📡", items:[
+    { id:"bs_overall", label:"Overall Condition", hint:"General physical condition, no visible damage" },
+    { id:"bs_housing", label:"Housing / Enclosure", hint:"No cracks, water intrusion signs" },
+    { id:"bs_battery_covers", label:"Battery Covers", hint:"Secure, latches intact, no warping" },
+    { id:"bs_antenna", label:"Antenna / QT450A", hint:"Connection secure, mount tight, no damage" },
+    { id:"bs_gnss", label:"GNSS Lock Quality", hint:"Achieves solid blue indicator" },
+    { id:"bs_batteries", label:"Base Station Batteries", hint:"LP-E6 cells hold charge, terminals clean" },
+    { id:"bs_pole", label:"Prism Pole / Tripod", hint:"Level bubble accurate, locks hold" },
+    { id:"bs_cables", label:"Cables & Connectors", hint:"LEMO pins straight, no fraying" },
+  ]},
+  { title:"Truck & Trailer", icon:"🚛", items:[
+    { id:"trailer_tires", label:"Trailer Tires", hint:"Pressure, tread, no dry rot" },
+    { id:"trailer_hitch", label:"Hitch & Safety Chains", hint:"Pin secure, chains intact" },
+    { id:"tie_downs", label:"Tie-Downs & Straps", hint:"Robot secured for transport" },
+    { id:"storage", label:"Storage / Organization", hint:"Bins organized, nothing loose" },
+    { id:"inventory_check", label:"Accessory Inventory", hint:"Nozzles, reducers, bayonets, screens stocked" },
+  ]},
+];
+const ALL_IDS = SECTIONS.flatMap(s => s.items.map(i => i.id));
+
+const PHOTO_SLOTS = [
+  { id:"front", label:"Front", icon:"▲", hint:"Head-on view of robot front" },
+  { id:"left", label:"Left Side", icon:"◄", hint:"Full left profile" },
+  { id:"right", label:"Right Side", icon:"►", hint:"Full right profile" },
+  { id:"back", label:"Back", icon:"▼", hint:"Rear view showing sprayer area" },
+  { id:"compartments", label:"Battery / Paint Jugs", icon:"⬒", hint:"Open compartment — batteries & paint jug area" },
+];
+
+// ═══════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════
+let state = {
+  robot: "", baseStation: "", items: {}, photos: {},
+  generalNotes: "", overallStatus: "",
+  sending: false, sent: false, error: "",
+  expandedSections: {},
+};
+SECTIONS.forEach(s => state.expandedSections[s.title] = true);
+
+function setState(patch) {
+  Object.assign(state, patch);
+  render();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════════════════════
+function render() {
+  const app = document.getElementById("app");
+  if (state.sent) { app.innerHTML = renderSent(); return; }
+  app.innerHTML = renderForm();
+  bindEvents();
+}
+
+function renderSent() {
+  const rb = ROBOTS.find(r => r.id === state.robot);
+  return `
+    <div class="sent-screen">
+      <div class="sent-inner">
+        <div class="sent-icon">✅</div>
+        <h2 class="sent-title">Inspection Submitted</h2>
+        <p class="sent-msg">Report emailed to Mark. The inspection for <strong>${rb?.label || ""}</strong> has been recorded.</p>
+        <button class="new-btn" onclick="resetForm()">New Inspection</button>
+      </div>
+    </div>`;
+}
+
+function renderForm() {
+  const rb = ROBOTS.find(r => r.id === state.robot);
+  const filled = ALL_IDS.filter(id => state.items[id]?.rating).length;
+  const total = ALL_IDS.length;
+  const pct = total > 0 ? Math.round((filled / total) * 100) : 0;
+  const isComplete = state.robot && state.baseStation && state.overallStatus && filled === total;
+
+  let html = `<div class="header">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+      <div class="header-dot"></div>
+      <h1>Monthly Robot Inspection</h1>
+    </div>
+    <div class="header-sub">Orange County Parks & Recreation — Turf Tank Program</div>
+    ${state.robot ? `<div class="progress-wrap" style="margin-top:12px;">
+      <div class="progress-labels"><span>${filled} / ${total} items rated</span><span>${pct}%</span></div>
+      <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+    </div>` : ""}
+  </div>
+  <div style="padding:0 16px 120px;max-width:540px;margin:0 auto;">`;
+
+  // Robot select
+  html += `<div class="card card-pad">
+    <label class="label">Select Robot</label>
+    <select class="sel" id="robotSelect" onchange="selectRobot(this.value)">
+      <option value="">— Choose unit —</option>
+      ${ROBOTS.map(r => `<option value="${r.id}" ${state.robot===r.id?"selected":""}>${r.label}</option>`).join("")}
+    </select>
+    ${rb ? `<div class="info-box">
+      <div><strong>Operator:</strong> ${rb.operator}</div>
+      <div><strong>Truck:</strong> ${rb.truck}</div>
+      <div><strong>Serial:</strong> ${rb.serial}</div>
+    </div>` : ""}
+  </div>`;
+
+  if (!state.robot) { html += `</div>`; return html; }
+
+  // Base station
+  html += `<div class="card card-pad-sm">
+    <label class="label label-sm">Base Station</label>
+    <select class="sel" onchange="setState({baseStation:this.value})">
+      <option value="">— Select —</option>
+      ${BASE_STATIONS.map(b => `<option value="${b.id}" ${state.baseStation===b.id?"selected":""}>${b.label}</option>`).join("")}
+    </select>
+  </div>`;
+
+  // Sections
+  SECTIONS.forEach(section => {
+    const open = state.expandedSections[section.title];
+    const done = section.items.every(i => state.items[i.id]?.rating);
+    const issues = section.items.filter(i => state.items[i.id]?.rating==="Needs Repair"||state.items[i.id]?.rating==="Out of Service").length;
+
+    html += `<div class="card" style="overflow:hidden;">
+      <button class="section-btn" onclick="toggleSection('${section.title}')">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="section-icon">${section.icon}</span>
+          <span class="section-title">${section.title}</span>
+          ${issues > 0 ? `<span class="issue-badge">${issues} issue${issues>1?"s":""}</span>` : ""}
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          ${done ? `<span class="section-check">✓</span>` : ""}
+          <span class="section-arrow" style="transform:rotate(${open?180:0}deg)">▼</span>
+        </div>
+      </button>
+      ${open ? `<div class="section-body">${section.items.map(item => renderItem(item)).join("")}</div>` : ""}
+    </div>`;
+  });
+
+  // Photos
+  html += `<div class="card card-pad">${renderPhotos()}</div>`;
+
+  // Notes
+  html += `<div class="card card-pad">
+    <label class="label">📝 General Notes</label>
+    <textarea class="note-input" rows="3" placeholder="Any additional observations, upcoming concerns, parts needed..."
+      oninput="setState({generalNotes:this.value})">${esc(state.generalNotes)}</textarea>
+  </div>`;
+
+  // Overall status
+  html += `<div class="card card-pad">
+    <label class="label" style="margin-bottom:10px;">Overall Unit Status</label>
+    <div style="display:flex;gap:8px;">
+      ${["Pass","Needs Attention","Out of Service"].map(s => {
+        const active = state.overallStatus === s;
+        const c = s==="Pass"?"var(--good)":s==="Needs Attention"?"var(--fair)":"var(--oos)";
+        return `<button class="status-btn" onclick="setState({overallStatus:'${s}'})"
+          style="flex:1;border:2px solid ${active?c:"var(--border)"};background:${active?c+"22":"transparent"};color:${active?c:"var(--text-dim)"}">
+          ${s==="Needs Attention"?"Attention":s==="Out of Service"?"OOS":s}</button>`;
+      }).join("")}
+    </div>
+  </div>`;
+
+  // Error
+  if (state.error) html += `<div class="error-box">${state.error}</div>`;
+
+  // Submit
+  html += `<button class="submit-btn ${isComplete && !state.sending ? "ready" : "disabled"}"
+    onclick="handleSubmit()" ${!isComplete||state.sending?"disabled":""}>
+    ${state.sending ? "Sending Report..." : !isComplete ? `Complete All Items to Submit (${filled}/${total})` : "Submit & Email Report"}
+  </button>`;
+
+  if (!isComplete) {
+    let hints = [];
+    if (!state.overallStatus) hints.push("Select an overall status.");
+    if (!state.baseStation) hints.push("Select a base station.");
+    if (filled < total) hints.push(`${total - filled} items still need ratings.`);
+    html += `<div class="helper-text">${hints.join(" ")}</div>`;
+  }
+
+  html += `</div>`;
+  return html;
+}
+
+function renderItem(item) {
+  const val = state.items[item.id] || {};
+  const needsNote = val.rating === "Needs Repair" || val.rating === "Out of Service";
+  return `<div class="item">
+    <div style="margin-bottom:6px;">
+      <div class="item-label">${item.label}</div>
+      <div class="item-hint">${item.hint}</div>
+    </div>
+    <div class="ratings">
+      ${RATINGS.map(r => {
+        const active = val.rating === r;
+        const c = RATING_COLORS[r];
+        return `<button class="pill" onclick="rateItem('${item.id}','${r}')"
+          style="border:1.5px solid ${active?c:"var(--border)"};background:${active?c+"22":"transparent"};color:${active?c:"var(--text-dim)"}">
+          ${RATING_SHORT[r]||r}</button>`;
+      }).join("")}
+    </div>
+    ${needsNote ? `<textarea class="note-input" placeholder="Describe the issue..."
+      oninput="noteItem('${item.id}',this.value)">${esc(val.note||"")}</textarea>` : ""}
+  </div>`;
+}
+
+function renderPhotos() {
+  const count = PHOTO_SLOTS.filter(s => state.photos[s.id]).length;
+  let html = `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+    <div style="font-weight:600;font-size:14px;">📷 Robot Photos</div>
+    <span style="font-size:11px;font-family:var(--font-mono);color:${count===5?"var(--accent)":"var(--text-dim)"}">${count} / 5</span>
+  </div>
+  <div style="font-size:11px;color:var(--text-dim);margin-bottom:12px;">Capture all 5 angles for a complete visual record.</div>
+  <div class="photo-grid">`;
+
+  PHOTO_SLOTS.forEach(slot => {
+    const photo = state.photos[slot.id];
+    const wide = slot.id === "compartments";
+    html += `<div class="photo-slot" style="border:1.5px dashed ${photo?"var(--accent)66":"var(--border)"};background:${photo?"transparent":"var(--bg)"};
+      aspect-ratio:${wide?"auto":"4/3"};min-height:${wide?"100px":"auto"};grid-column:${wide?"1/-1":"auto"};"
+      onclick="if(!window._photoSlots?.['${slot.id}'])triggerPhoto('${slot.id}')">
+      <input type="file" accept="image/*" capture="environment" id="photo_${slot.id}" style="display:none" onchange="capturePhoto('${slot.id}',this)">
+      ${photo ? `
+        <img src="${photo.data}" alt="${slot.label}" style="width:100%;height:100%;object-fit:cover;display:block;">
+        <div class="photo-overlay">
+          <span style="font-size:11px;font-family:var(--font-mono);font-weight:600;color:#fff;">${slot.label}</span>
+          <div style="display:flex;gap:6px;">
+            <button class="photo-btn" style="background:rgba(255,255,255,0.2);color:#fff;" onclick="event.stopPropagation();triggerPhoto('${slot.id}')" title="Retake">↻</button>
+            <button class="photo-btn" style="background:rgba(248,81,73,0.3);color:var(--oos);" onclick="event.stopPropagation();removePhoto('${slot.id}')">×</button>
+          </div>
+        </div>
+      ` : `
+        <div class="photo-slot-empty">
+          <div class="photo-slot-icon">${slot.icon}</div>
+          <div class="photo-slot-label">${slot.label}</div>
+          <div class="photo-slot-hint">${slot.hint}</div>
+          <div class="photo-slot-cta">Tap to capture</div>
+        </div>
+      `}
+    </div>`;
+  });
+
+  html += `</div>`;
+  return html;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ACTIONS
+// ═══════════════════════════════════════════════════════════════
+function esc(s) { return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+
+function selectRobot(id) {
+  const rb = ROBOTS.find(r => r.id === id);
+  const bs = rb ? BASE_STATIONS.find(b => b.truck === rb.truck) : null;
+  setState({ robot: id, baseStation: bs ? bs.id : "" });
+}
+
+function toggleSection(title) {
+  state.expandedSections[title] = !state.expandedSections[title];
+  render();
+}
+
+function rateItem(id, rating) {
+  state.items[id] = { ...state.items[id], rating };
+  render();
+}
+
+function noteItem(id, note) {
+  state.items[id] = { ...state.items[id], note };
+  // don't re-render on typing — just update state
+}
+
+function triggerPhoto(slotId) {
+  document.getElementById("photo_" + slotId)?.click();
+}
+
+function capturePhoto(slotId, input) {
+  const file = input.files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    state.photos[slotId] = { name: file.name, data: e.target.result, type: file.type };
+    render();
+  };
+  reader.readAsDataURL(file);
+  input.value = "";
+}
+
+function removePhoto(slotId) {
+  delete state.photos[slotId];
+  render();
+}
+
+function resetForm() {
+  state = {
+    robot:"", baseStation:"", items:{}, photos:{},
+    generalNotes:"", overallStatus:"",
+    sending:false, sent:false, error:"",
+    expandedSections:{},
+  };
+  SECTIONS.forEach(s => state.expandedSections[s.title] = true);
+  render();
+}
+
+function bindEvents() {
+  // Notes fields need special handling to preserve cursor
+}
+
+// ═══════════════════════════════════════════════════════════════
+// BUILD EMAIL HTML
+// ═══════════════════════════════════════════════════════════════
+function buildEmailHTML() {
+  const rb = ROBOTS.find(r => r.id === state.robot);
+  const bs = BASE_STATIONS.find(b => b.id === state.baseStation);
+  const now = new Date();
+  const dateStr = now.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});
+  const issueCount = ALL_IDS.filter(id => state.items[id]?.rating==="Needs Repair"||state.items[id]?.rating==="Out of Service").length;
+  const emoji = state.overallStatus==="Pass"?"✅":state.overallStatus==="Needs Attention"?"⚠️":"🔴";
+
+  let h = `<div style="font-family:Arial,sans-serif;max-width:680px;">`;
+  h += `<h2 style="color:#238636;border-bottom:2px solid #238636;padding-bottom:8px;">Monthly Robot Inspection — ${dateStr}</h2>`;
+  h += `<table style="border-collapse:collapse;width:100%;margin:12px 0;">`;
+  h += `<tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Robot:</td><td>${rb?.label||""}</td></tr>`;
+  h += `<tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Operator:</td><td>${rb?.operator||""}</td></tr>`;
+  h += `<tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Truck:</td><td>${rb?.truck||""}</td></tr>`;
+  h += `<tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Base Station:</td><td>${bs?.label||""}</td></tr>`;
+  h += `<tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Status:</td><td>${emoji} ${state.overallStatus}</td></tr>`;
+  if (issueCount > 0) h += `<tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Issues Found:</td><td style="color:#f85149;font-weight:bold;">${issueCount}</td></tr>`;
+  h += `</table>`;
+
+  const rawColors = { Good:"#3fb950", Fair:"#d29922", "Needs Repair":"#f0883e", "Out of Service":"#f85149" };
+  SECTIONS.forEach(section => {
+    h += `<h3 style="margin:18px 0 6px;color:#8b949e;font-size:14px;text-transform:uppercase;letter-spacing:0.5px;">${section.icon} ${section.title}</h3>`;
+    h += `<table style="border-collapse:collapse;width:100%;font-size:14px;">`;
+    section.items.forEach(item => {
+      const val = state.items[item.id];
+      const rating = val?.rating || "—";
+      const c = rawColors[rating] || "#8b949e";
+      h += `<tr style="border-bottom:1px solid #eee;"><td style="padding:5px 8px 5px 0;">${item.label}</td><td style="padding:5px 0;color:${c};font-weight:600;text-align:right;">${rating}</td></tr>`;
+      if (val?.note) h += `<tr><td colspan="2" style="padding:2px 0 6px 16px;color:#666;font-style:italic;">→ ${val.note.replace(/</g,"&lt;")}</td></tr>`;
+    });
+    h += `</table>`;
+  });
+
+  if (state.generalNotes.trim()) {
+    h += `<h3 style="margin:18px 0 6px;color:#8b949e;font-size:14px;">📝 General Notes</h3>`;
+    h += `<p style="background:#f6f8fa;padding:12px;border-radius:6px;font-size:14px;">${state.generalNotes.replace(/</g,"&lt;").replace(/\n/g,"<br>")}</p>`;
+  }
+
+  const photoEntries = PHOTO_SLOTS.filter(s => state.photos[s.id]);
+  if (photoEntries.length > 0) {
+    h += `<h3 style="margin:18px 0 6px;color:#8b949e;font-size:14px;">📷 Robot Photos (${photoEntries.length}/5)</h3>`;
+    photoEntries.forEach(slot => {
+      const p = state.photos[slot.id];
+      h += `<div style="margin:8px 0;"><div style="font-size:12px;font-weight:bold;color:#333;margin-bottom:4px;">${slot.label}</div>`;
+      h += `<img src="${p.data}" alt="${slot.label}" style="max-width:100%;max-height:400px;border-radius:6px;border:1px solid #ddd;"></div>`;
+    });
+  }
+
+  h += `<hr style="margin:24px 0;border:none;border-top:1px solid #ddd;">`;
+  h += `<p style="font-size:12px;color:#8b949e;">Orange County Parks & Recreation — Turf Tank Program</p></div>`;
+  return h;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SUBMIT
+// ═══════════════════════════════════════════════════════════════
+async function handleSubmit() {
+  const filled = ALL_IDS.filter(id => state.items[id]?.rating).length;
+  const isComplete = state.robot && state.baseStation && state.overallStatus && filled === ALL_IDS.length;
+  if (!isComplete || state.sending) return;
+
+  const issueIds = ALL_IDS.filter(id => state.items[id]?.rating==="Needs Repair"||state.items[id]?.rating==="Out of Service");
+  const missingNotes = issueIds.filter(id => !state.items[id]?.note?.trim());
+  if (missingNotes.length > 0) {
+    setState({ error: `Please add notes for ${missingNotes.length} item(s) marked Repair/OOS.` });
+    return;
+  }
+
+  // Check EmailJS config
+  if (EMAILJS_PUBLIC_KEY === "YOUR_PUBLIC_KEY") {
+    setState({ error: "EmailJS not configured yet. See the setup instructions in the HTML file header." });
+    return;
+  }
+
+  setState({ sending: true, error: "" });
+
+  try {
+    const rb = ROBOTS.find(r => r.id === state.robot);
+    const now = new Date();
+    const dateStr = now.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});
+    const emoji = state.overallStatus==="Pass"?"✅":state.overallStatus==="Needs Attention"?"⚠️":"🔴";
+    const subject = `${emoji} Robot Inspection: ${rb?.label} — ${dateStr}`;
+    const htmlBody = buildEmailHTML();
+
+    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+      to_email: RECIPIENT_EMAIL,
+      subject: subject,
+      html_body: htmlBody,
+    });
+
+    setState({ sent: true, sending: false });
+  } catch (err) {
+    console.error("Email send error:", err);
+    setState({ sending: false, error: `Failed to send: ${err?.text || err?.message || "Unknown error"}. You can screenshot this form as a backup.` });
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
+render();
+</script>
+</body>
+</html>
