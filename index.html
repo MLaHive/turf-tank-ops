@@ -426,12 +426,14 @@ body {
 </head>
 <body>
 <div id="root"></div>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
 <script type="text/babel">
 
-const { useState, useMemo, useCallback } = React;
+const { useState, useMemo, useCallback, useEffect, useRef } = React;
 
 // ════════════════════════════════════════════════════
 // DATA
@@ -908,9 +910,77 @@ function RoutesView() {
   );
 }
 
+// ── GPS Map View ──
+function GPSMapView({truckFilter}) {
+  const mapRef = useRef(null);
+  const mapInstance = useRef(null);
+
+  useEffect(() => {
+    if (!mapRef.current || !window.L) return;
+    const timer = setTimeout(() => {
+      if (mapInstance.current) { mapInstance.current.remove(); mapInstance.current = null; }
+
+      const map = window.L.map(mapRef.current, {zoomControl: true});
+      window.L.tileLayer(
+        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        {maxZoom: 20, attribution: '© Esri'}
+      ).addTo(map);
+
+      const stations = truckFilter === 'all' ? STATIONS
+        : STATIONS.filter(s => s.truck === (truckFilter === 'truck1' ? 1 : 2));
+
+      const grouped = {};
+      stations.forEach(s => { if (!grouped[s.site]) grouped[s.site] = []; grouped[s.site].push(s); });
+
+      const allLL = [];
+      Object.entries(grouped).forEach(([site, points]) => {
+        points.forEach((pt, i) => {
+          const color = pt.truck === 1 ? '#d97706' : '#2563eb';
+          const icon = window.L.divIcon({
+            className: '',
+            html: `<div style="width:18px;height:18px;background:${color};border:2.5px solid #fff;border-radius:50% 50% 50% 0;transform:rotate(-45deg);box-shadow:0 2px 10px rgba(0,0,0,0.5)"></div>`,
+            iconSize: [18,18], iconAnchor: [9,16], popupAnchor: [0,-18],
+          });
+          const label = points.length > 1 ? `${site} · pt ${i+1}` : site;
+          const popup = `<div style="font-family:-apple-system,sans-serif;min-width:190px">
+            <div style="font-size:10px;font-weight:700;color:${color};letter-spacing:0.1em;text-transform:uppercase;margin-bottom:3px">T${pt.truck} Base Station</div>
+            <div style="font-size:15px;font-weight:700;margin-bottom:8px;color:#111">${label}</div>
+            <div style="font-family:monospace;font-size:11px;color:#555;line-height:1.9">
+              LAT <span style="color:#1d4ed8">${pt.lat.toFixed(6)}</span><br>
+              LNG <span style="color:#1d4ed8">${pt.lng.toFixed(6)}</span>
+            </div>
+            <a href="https://www.google.com/maps/search/?api=1&query=${pt.lat},${pt.lng}" target="_blank"
+              style="display:block;margin-top:10px;padding:7px 12px;background:#16a34a;color:#fff;text-decoration:none;border-radius:8px;font-size:12px;font-weight:600;text-align:center">
+              ↗ Navigate
+            </a>
+          </div>`;
+          window.L.marker([pt.lat, pt.lng], {icon}).bindPopup(popup, {maxWidth:240}).addTo(map);
+          allLL.push([pt.lat, pt.lng]);
+        });
+      });
+
+      if (allLL.length) map.fitBounds(window.L.latLngBounds(allLL).pad(0.08));
+      mapInstance.current = map;
+    }, 80);
+
+    return () => { clearTimeout(timer); if (mapInstance.current) { mapInstance.current.remove(); mapInstance.current = null; } };
+  }, [truckFilter]);
+
+  return (
+    <div ref={mapRef} style={{
+      height: 'calc(100dvh - 230px)',
+      borderRadius: 'var(--radius)',
+      overflow: 'hidden',
+      border: '1px solid var(--border)',
+      marginTop: 8,
+    }}/>
+  );
+}
+
 // ── Base Stations View ──
 function StationsView({search}) {
   const [truckFilter, setTruckFilter] = useState('all');
+  const [viewMode, setViewMode] = useState('list');
 
   const grouped = useMemo(() => {
     const stations = truckFilter === 'all' ? STATIONS
@@ -931,33 +1001,46 @@ function StationsView({search}) {
 
   return (
     <div className="fade-in">
-      <div className="truck-toggle">
-        <button className={`truck-toggle-btn ${truckFilter==='all'?'active-t1':''}`} style={truckFilter==='all'?{background:'var(--accent-orange-dim)',color:'var(--accent-orange)'}:{}} onClick={()=>setTruckFilter('all')}>All Sites</button>
-        <button className={`truck-toggle-btn ${truckFilter==='truck1'?'active-t1':''}`} onClick={()=>setTruckFilter('truck1')}>T1 — West/South</button>
-        <button className={`truck-toggle-btn ${truckFilter==='truck2'?'active-t2':''}`} onClick={()=>setTruckFilter('truck2')}>T2 — East/SE</button>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
+        <div className="truck-toggle" style={{flex:1,marginBottom:0,marginRight:8}}>
+          <button className={`truck-toggle-btn ${truckFilter==='all'?'active-t1':''}`} style={truckFilter==='all'?{background:'var(--accent-orange-dim)',color:'var(--accent-orange)'}:{}} onClick={()=>setTruckFilter('all')}>All</button>
+          <button className={`truck-toggle-btn ${truckFilter==='truck1'?'active-t1':''}`} onClick={()=>setTruckFilter('truck1')}>T1</button>
+          <button className={`truck-toggle-btn ${truckFilter==='truck2'?'active-t2':''}`} onClick={()=>setTruckFilter('truck2')}>T2</button>
+        </div>
+        <div style={{display:'flex',background:'var(--bg-input)',border:'1px solid var(--border)',borderRadius:'var(--radius)',padding:3,gap:3,flexShrink:0}}>
+          <button onClick={()=>setViewMode('list')} style={{padding:'6px 12px',border:'none',borderRadius:9,fontFamily:'var(--font-sans)',fontWeight:600,fontSize:12,cursor:'pointer',transition:'all 0.2s',background:viewMode==='list'?'var(--bg-card)':'transparent',color:viewMode==='list'?'var(--text-primary)':'var(--text-muted)',boxShadow:viewMode==='list'?'0 1px 3px rgba(0,0,0,0.08)':'none'}}>List</button>
+          <button onClick={()=>setViewMode('map')} style={{padding:'6px 12px',border:'none',borderRadius:9,fontFamily:'var(--font-sans)',fontWeight:600,fontSize:12,cursor:'pointer',transition:'all 0.2s',background:viewMode==='map'?'var(--bg-card)':'transparent',color:viewMode==='map'?'var(--text-primary)':'var(--text-muted)',boxShadow:viewMode==='map'?'0 1px 3px rgba(0,0,0,0.08)':'none'}}>Map</button>
+        </div>
       </div>
-      <div className="section-title">{filtered.length} Sites — {pointCount} Points</div>
-      {filtered.map(([site, points]) => (
-        <div className="station-group" key={site}>
-          <div className="station-group-header">
-            <span className="station-group-name">{site}</span>
-            <div style={{display:'flex',alignItems:'center',gap:6}}>
-              <span className={`card-badge ${points[0].truck===1?'badge-t1':'badge-t2'}`}>T{points[0].truck}</span>
-              <span className="badge-count">{points.length} pt{points.length>1?'s':''}</span>
-            </div>
-          </div>
-          {points.map((pt, i) => (
-            <div className="station-point" key={i}>
-              <div>
-                <div className="station-coords">{pt.lat.toFixed(6)}, {pt.lng.toFixed(6)}</div>
+
+      {viewMode === 'map' && <GPSMapView truckFilter={truckFilter}/>}
+
+      {viewMode === 'list' && (
+        <>
+          <div className="section-title">{filtered.length} Sites — {pointCount} Points</div>
+          {filtered.map(([site, points]) => (
+            <div className="station-group" key={site}>
+              <div className="station-group-header">
+                <span className="station-group-name">{site}</span>
+                <div style={{display:'flex',alignItems:'center',gap:6}}>
+                  <span className={`card-badge ${points[0].truck===1?'badge-t1':'badge-t2'}`}>T{points[0].truck}</span>
+                  <span className="badge-count">{points.length} pt{points.length>1?'s':''}</span>
+                </div>
               </div>
-              <a className="gps-btn" onClick={(e)=>{e.preventDefault();openMaps(pt.lat,pt.lng)}} href="#">
-                <Icon name="navigate" size={14}/> Navigate
-              </a>
+              {points.map((pt, i) => (
+                <div className="station-point" key={i}>
+                  <div>
+                    <div className="station-coords">{pt.lat.toFixed(6)}, {pt.lng.toFixed(6)}</div>
+                  </div>
+                  <a className="gps-btn" onClick={(e)=>{e.preventDefault();openMaps(pt.lat,pt.lng)}} href="#">
+                    <Icon name="navigate" size={14}/> Navigate
+                  </a>
+                </div>
+              ))}
             </div>
           ))}
-        </div>
-      ))}
+        </>
+      )}
     </div>
   );
 }
